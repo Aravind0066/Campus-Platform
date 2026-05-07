@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Campus Intelligence System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Campus resources, community discussions, and email-synced notices in one installable mobile-ready platform.">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Campus Intelligence">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="/pwa/icon.svg">
+  <link rel="apple-touch-icon" href="/pwa/apple-touch-icon.png">
+  <link rel="stylesheet" href="/pwa/pwa.css">
+  <script src="/pwa/pwa-register.js" defer></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Segoe UI", sans-serif; }
+    body { background: #f5f7fb; color: #101828; }
+    #navbar {
+      position: fixed; top: 0; width: 100%; height: 72px; z-index: 1000;
+      background: rgba(10, 16, 30, 0.94); color: white; display: flex;
+      align-items: center; justify-content: space-between; padding: 0 36px;
+      backdrop-filter: blur(16px);
+    }
+    #navbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+    #navbar nav a { color: white; text-decoration: none; font-size: 14px; opacity: 0.92; }
+    #navbar nav a:hover { opacity: 1; }
+    .hero {
+      margin-top: 72px; min-height: 58vh; padding: 84px 24px 120px;
+      background: radial-gradient(circle at top left, rgba(96, 165, 250, 0.32), transparent 34%),
+                  linear-gradient(135deg, #0f172a 0%, #1d4ed8 50%, #0f766e 100%);
+      color: white; display: flex; align-items: center; justify-content: center; text-align: center;
+    }
+    .hero-content { max-width: 980px; }
+    .eyebrow {
+      display: inline-block; margin-bottom: 14px; padding: 6px 12px; border-radius: 999px;
+      background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22); font-size: 12px; letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .hero h1 { font-size: clamp(2.4rem, 4.5vw, 4.1rem); margin-bottom: 18px; }
+    .hero p {
+      font-size: 1.05rem; line-height: 1.8; opacity: 0.94; max-width: 780px; margin: 0 auto;
+    }
+    .hero-actions {
+      display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 26px;
+    }
+    .hero-actions a {
+      text-decoration: none; border-radius: 999px; padding: 12px 18px; font-weight: 700; font-size: 14px;
+    }
+    .primary-cta { background: white; color: #0f172a; }
+    .secondary-cta { border: 1px solid rgba(255,255,255,0.4); color: white; background: rgba(255,255,255,0.08); }
+    .section {
+      max-width: 1180px; margin: 0 auto; padding: 28px 24px;
+    }
+    .section h2 { font-size: 1.9rem; margin-bottom: 10px; }
+    .section-copy { color: #475467; line-height: 1.7; max-width: 760px; margin-bottom: 22px; }
+    .overview-grid, .feature-grid {
+      display: grid; gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+    .card {
+      background: white; border-radius: 22px; padding: 24px;
+      box-shadow: 0 18px 44px rgba(15, 23, 42, 0.10);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+    }
+    .card h3 { margin-bottom: 12px; font-size: 1.22rem; }
+    .card p { color: #475467; line-height: 1.7; font-size: 0.95rem; }
+    .card a {
+      display: inline-block; margin-top: 14px; text-decoration: none; font-weight: 700; color: #1d4ed8;
+    }
+    .point-list {
+      display: grid; gap: 14px;
+    }
+    .point {
+      padding: 18px 20px; border-radius: 18px; background: #f8fafc; border: 1px solid #e4e7ec;
+    }
+    .point strong { display: block; margin-bottom: 6px; }
+    footer { text-align: center; padding: 26px 24px 48px; color: #667085; font-size: 0.92rem; }
+    @media (max-width: 720px) {
+      #navbar { height: auto; padding: 16px 20px; align-items: flex-start; gap: 10px; }
+      .hero { margin-top: 86px; padding: 58px 20px 92px; }
+      .section { padding: 24px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <header id="navbar">
+    <div><strong>Campus Intelligence</strong></div>
+    <nav>
+      <a href="resources.html">Resources</a>
+      <a href="community.html">Community</a>
+      <a href="noticeboard.html">Noticeboard</a>
+      <a href="profile.html">Profile</a>
+      <a href="admin.html" id="adminLink" style="display:none;">Admin</a>
+      <a href="login.html" id="loginLink">Login</a>
+      <a href="#" id="logoutLink" style="display:none;">Logout</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div class="hero-content">
+      <div class="eyebrow">Campus Platform Showcase</div>
+      <h1>One system for campus resources, student discussions, and official notices.</h1>
+      <p>
+        The home page stays public so you can present the concept clearly. Every working module after this
+        point is protected behind login, which helps you explain both the feature set and the security model
+        without exposing live internal data on the landing page.
+      </p>
+      <div class="hero-actions">
+        <a href="login.html" class="primary-cta" id="heroLoginCta">Sign In</a>
+        <a href="#featureShowcase" class="secondary-cta">See Features</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Platform Overview</h2>
+    <p class="section-copy">
+      Campus Intelligence is designed as a complete campus operations platform instead of a simple college website.
+      It connects facility discovery, student collaboration, and official communication in one structured workflow.
+    </p>
+    <div class="overview-grid">
+      <article class="card">
+        <h3>Resources</h3>
+        <p>Students can find labs, support offices, library spaces, and service points with building context, availability, timings, contact details, and equipment information.</p>
+        <a href="resources.html">Open protected module</a>
+      </article>
+      <article class="card">
+        <h3>Community</h3>
+        <p>Students can post queries and temporary updates, reply in threaded discussions, and mark accepted answers so useful knowledge does not get lost in chat-style noise.</p>
+        <a href="community.html">Open protected module</a>
+      </article>
+      <article class="card">
+        <h3>Noticeboard</h3>
+        <p>Admins can publish targeted notices, import updates from email, track views, and keep official communication in one consistent system.</p>
+        <a href="noticeboard.html">Open protected module</a>
+      </article>
+    </div>
+  </section>
+
+  <section class="section" id="featureShowcase">
+    <h2>What Makes It Stand Out</h2>
+    <p class="section-copy">
+      The goal is not to overload the project with gimmicks. These are the features that make it feel complete,
+      unique, and easy to explain in a presentation or viva.
+    </p>
+    <div class="point-list">
+      <div class="point">
+        <strong>Browser-bound sessions</strong>
+        Sessions are tied to the authenticated browser, which adds a stronger security story than a basic login-only demo.
+      </div>
+      <div class="point">
+        <strong>Email-powered notices</strong>
+        Official notices can be imported from email and merged into the same noticeboard workflow instead of being treated as a disconnected inbox.
+      </div>
+      <div class="point">
+        <strong>Short-lived update posts</strong>
+        Community updates can expire, which fits real campus usage better than permanent clutter.
+      </div>
+      <div class="point">
+        <strong>Accepted-answer discussion flow</strong>
+        Student queries can now move from open question to resolved answer, making the platform more useful over time.
+      </div>
+      <div class="point">
+        <strong>Building-linked resource intelligence</strong>
+        Resources are not isolated records. They are tied to campus buildings, timings, support context, and operational details.
+      </div>
+    </div>
+  </section>
+
+  <footer>Campus Intelligence System</footer>
+
+  <script src="/app-assets/session.js"></script>
+  <script>
+    window.CampusSession.fetchCurrentUser().then((user) => {
+      const heroLoginCta = document.getElementById('heroLoginCta');
+      if (heroLoginCta && user) {
+        heroLoginCta.textContent = 'Open Your Workspace';
+        heroLoginCta.href = 'profile.html';
+      }
+    }).catch(() => {});
+  </script>
+</body>
+</html>

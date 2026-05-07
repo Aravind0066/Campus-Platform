@@ -1,0 +1,153 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Resource Details</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Detailed campus resource information with mobile-friendly install support.">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Campus Intelligence">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="/pwa/icon.svg">
+  <link rel="apple-touch-icon" href="/pwa/apple-touch-icon.png">
+  <link rel="stylesheet" href="/pwa/pwa.css">
+  <script src="/pwa/pwa-register.js" defer></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Segoe UI", sans-serif; }
+    body { background: #f5f7fb; color: #101828; }
+    #navbar {
+      position: fixed; top: 0; width: 100%; height: 72px; z-index: 1000;
+      background: rgba(10, 16, 30, 0.94); color: white; display: flex;
+      justify-content: space-between; align-items: center; padding: 0 34px;
+    }
+    #navbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+    #navbar nav a { color: white; text-decoration: none; font-size: 14px; }
+    .hero {
+      margin-top: 72px; padding: 72px 24px 48px; color: white; text-align: center;
+      background: linear-gradient(135deg, #0f172a 0%, #2563eb 58%, #0891b2 100%);
+    }
+    .hero h1 { font-size: clamp(2rem, 4vw, 3.1rem); margin-bottom: 12px; }
+    .hero p { max-width: 760px; margin: 0 auto; opacity: 0.92; line-height: 1.7; }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 30px 24px 72px; }
+    .grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px;
+    }
+    .card {
+      background: white; border-radius: 22px; padding: 24px; box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+    }
+    .card h2 { margin-bottom: 16px; font-size: 1.2rem; }
+    .detail-row { margin-bottom: 12px; color: #475467; line-height: 1.6; }
+    .detail-row strong { color: #101828; }
+    .badge {
+      display: inline-block; padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
+    }
+    .open { background: #dcfae6; color: #067647; }
+    .closed { background: #fee4e2; color: #b42318; }
+    .back-link { display: inline-block; margin-bottom: 22px; color: #1d4ed8; text-decoration: none; font-weight: 600; }
+    @media (max-width: 720px) {
+      #navbar { height: auto; padding: 16px 20px; align-items: flex-start; gap: 10px; }
+      .hero { margin-top: 86px; padding: 56px 20px 40px; }
+      .wrap { padding: 24px 20px 60px; }
+    }
+  </style>
+</head>
+<body>
+  <header id="navbar">
+    <div><strong>Campus Intelligence</strong></div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="resources.html">Resources</a>
+      <a href="community.html">Community</a>
+      <a href="noticeboard.html">Noticeboard</a>
+      <a href="profile.html">Profile</a>
+      <a href="admin.html" id="adminLink" style="display:none;">Admin</a>
+      <a href="login.html" id="loginLink">Login</a>
+      <a href="#" id="logoutLink" style="display:none;">Logout</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1 id="resourceName">Loading resource...</h1>
+    <p id="resourceDescription">Fetching resource details.</p>
+  </section>
+
+  <div class="wrap">
+    <a class="back-link" href="resources.html">Back to Resources</a>
+    <div class="grid">
+      <section class="card">
+        <h2>Operational Info</h2>
+        <div class="detail-row"><strong>Status:</strong> <span id="statusBadge" class="badge"></span></div>
+        <div class="detail-row"><strong>Type:</strong> <span id="resourceType"></span></div>
+        <div class="detail-row"><strong>Floor:</strong> <span id="floorNumber"></span></div>
+        <div class="detail-row"><strong>Timings:</strong> <span id="timings"></span></div>
+        <div class="detail-row"><strong>Contact:</strong> <span id="contact"></span></div>
+      </section>
+      <section class="card">
+        <h2>Building Context</h2>
+        <div class="detail-row"><strong>Building:</strong> <span id="buildingName"></span></div>
+        <div class="detail-row"><strong>Code:</strong> <span id="buildingCode"></span></div>
+        <div class="detail-row"><strong>Location:</strong> <span id="buildingLocation"></span></div>
+        <div class="detail-row"><strong>Building Notes:</strong> <span id="buildingDescription"></span></div>
+      </section>
+      <section class="card">
+        <h2>Capacity and Equipment</h2>
+        <div class="detail-row"><strong>Capacity:</strong> <span id="capacity"></span></div>
+        <div class="detail-row"><strong>Equipment:</strong> <span id="equipment"></span></div>
+      </section>
+    </div>
+  </div>
+
+  <script src="/app-assets/session.js"></script>
+  <script>
+    function setText(id, value, fallback = 'Not listed') {
+      document.getElementById(id).textContent = value || fallback;
+    }
+
+    async function loadResource() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      if (!id) {
+        document.getElementById('resourceName').textContent = 'Resource not found';
+        document.getElementById('resourceDescription').textContent = 'No resource id was provided.';
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/resources/${id}`, { credentials: 'include' });
+        const payload = await response.json();
+        if (!response.ok || !payload.success || !payload.data) {
+          throw new Error(payload.message || 'Resource not found.');
+        }
+
+        const resource = payload.data;
+        document.getElementById('resourceName').textContent = resource.name;
+        document.getElementById('resourceDescription').textContent = resource.description || 'No detailed description available.';
+
+        const badge = document.getElementById('statusBadge');
+        badge.textContent = resource.is_open ? 'Open' : 'Closed';
+        badge.className = `badge ${resource.is_open ? 'open' : 'closed'}`;
+
+        setText('resourceType', resource.type);
+        setText('floorNumber', resource.floor_number);
+        setText('timings', resource.timings);
+        setText('contact', resource.contact_info);
+        setText('buildingName', resource.building_name);
+        setText('buildingCode', resource.building_code);
+        setText('buildingLocation', resource.building_location);
+        setText('buildingDescription', resource.building_description);
+        setText('capacity', resource.capacity ? String(resource.capacity) : '', 'Not specified');
+        setText('equipment', resource.equipment);
+      } catch (err) {
+        document.getElementById('resourceName').textContent = 'Resource not found';
+        document.getElementById('resourceDescription').textContent = err.message || 'Could not load this resource.';
+      }
+    }
+
+    Promise.all([window.CampusSession.fetchCurrentUser(), loadResource()]).catch(() => {});
+  </script>
+</body>
+</html>

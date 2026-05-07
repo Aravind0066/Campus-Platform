@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Offline - Campus Intelligence</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f172a">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Segoe UI", sans-serif; }
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at top left, rgba(96, 165, 250, 0.22), transparent 28%),
+        linear-gradient(135deg, #0f172a 0%, #1d4ed8 55%, #0f766e 100%);
+      color: white;
+    }
+    .card {
+      width: min(100%, 560px);
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 28px;
+      padding: 32px;
+      box-shadow: 0 28px 64px rgba(2, 6, 23, 0.38);
+      backdrop-filter: blur(14px);
+    }
+    h1 { font-size: clamp(2rem, 6vw, 2.8rem); margin-bottom: 12px; }
+    p { line-height: 1.75; color: rgba(255,255,255,0.88); margin-bottom: 18px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+    a, button {
+      text-decoration: none;
+      border: none;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .primary { background: white; color: #0f172a; }
+    .secondary { background: rgba(255,255,255,0.10); color: white; border: 1px solid rgba(255,255,255,0.16); }
+    ul { margin-top: 18px; padding-left: 18px; color: rgba(255,255,255,0.86); line-height: 1.7; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>You’re offline.</h1>
+    <p>
+      Campus Intelligence can still reopen its cached landing and login pages, but live dashboards,
+      protected modules, and inbox sync need a connection to refresh safely.
+    </p>
+    <div class="actions">
+      <button class="primary" onclick="window.location.reload()">Try again</button>
+      <a class="secondary" href="/index.html">Open cached home</a>
+      <a class="secondary" href="/login.html">Open cached login</a>
+    </div>
+    <ul>
+      <li>Reconnect to load notice sync, community updates, and protected pages.</li>
+      <li>Once installed, the app still launches from your home screen like a normal phone app.</li>
+    </ul>
+  </main>
+</body>
+</html>

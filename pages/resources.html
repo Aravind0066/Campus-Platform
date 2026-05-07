@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Resource Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Campus resources and service points in an installable mobile-ready platform.">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Campus Intelligence">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="/pwa/icon.svg">
+  <link rel="apple-touch-icon" href="/pwa/apple-touch-icon.png">
+  <link rel="stylesheet" href="/pwa/pwa.css">
+  <script src="/pwa/pwa-register.js" defer></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Segoe UI", sans-serif; }
+    body { background: #f5f7fb; color: #101828; }
+    #navbar {
+      position: fixed; top: 0; width: 100%; height: 72px; z-index: 1000;
+      background: rgba(10, 16, 30, 0.94); color: white; display: flex;
+      justify-content: space-between; align-items: center; padding: 0 34px; backdrop-filter: blur(14px);
+    }
+    #navbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+    #navbar nav a { color: white; text-decoration: none; font-size: 14px; }
+    .hero {
+      margin-top: 72px; padding: 78px 24px 58px; color: white; text-align: center;
+      background:
+        radial-gradient(circle at top right, rgba(255,255,255,0.16), transparent 28%),
+        linear-gradient(135deg, #0f172a 0%, #0f766e 46%, #2563eb 100%);
+    }
+    .hero h1 { font-size: clamp(2.1rem, 4vw, 3.3rem); margin-bottom: 14px; }
+    .hero p { max-width: 860px; margin: 0 auto; line-height: 1.7; opacity: 0.94; }
+    .wrap { max-width: 1220px; margin: 0 auto; padding: 28px 24px 72px; }
+    .grid { display: grid; gap: 20px; }
+    .summary-grid, .insight-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px;
+    }
+    .summary-grid { margin-top: -36px; }
+    .card, .resource-card, .empty-state {
+      background: white; border-radius: 24px; border: 1px solid rgba(148, 163, 184, 0.18);
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+    }
+    .card { padding: 24px; }
+    .metric-label { color: #667085; font-size: 13px; margin-bottom: 10px; display: block; }
+    .metric-value { font-size: 2rem; font-weight: 700; margin-bottom: 6px; }
+    .metric-caption { color: #475467; font-size: 13px; line-height: 1.5; }
+    .section-title { font-size: 1.25rem; margin-bottom: 10px; }
+    .section-copy { color: #475467; line-height: 1.65; margin-bottom: 16px; }
+    .controls {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px;
+    }
+    .controls input, .controls select {
+      width: 100%; padding: 13px 14px; border: 1px solid #d0d5dd; border-radius: 14px; font-size: 14px;
+      background: white;
+    }
+    .pill-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 7px 12px;
+      background: #eef2ff; color: #3730a3; font-size: 12px; font-weight: 700; cursor: pointer;
+    }
+    .pill.active { background: #1d4ed8; color: white; }
+    .insight-list { display: grid; gap: 12px; }
+    .insight-item {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 12px 14px; background: #f8fafc; border-radius: 16px; color: #344054;
+    }
+    .bar { height: 8px; background: #e4e7ec; border-radius: 999px; overflow: hidden; margin-top: 8px; }
+    .bar > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #0f766e, #2563eb); }
+    .resource-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+    .resource-card { padding: 24px; cursor: pointer; transition: transform 0.24s ease, box-shadow 0.24s ease; }
+    .resource-card:hover { transform: translateY(-5px); box-shadow: 0 22px 48px rgba(15, 23, 42, 0.13); }
+    .resource-card h3 { margin-bottom: 10px; font-size: 1.18rem; }
+    .resource-meta, .resource-badges { display: flex; gap: 10px; flex-wrap: wrap; }
+    .resource-badges { margin-bottom: 12px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 6px 12px;
+      font-size: 12px; font-weight: 700;
+    }
+    .badge.type { background: #eff8ff; color: #175cd3; }
+    .badge.open { background: #dcfae6; color: #067647; }
+    .badge.closed { background: #fee4e2; color: #b42318; }
+    .badge.building { background: #f2f4f7; color: #344054; }
+    .resource-card p { color: #475467; line-height: 1.65; margin-bottom: 14px; }
+    .resource-footer { color: #667085; font-size: 13px; line-height: 1.6; }
+    .empty-state { padding: 30px; text-align: center; color: #667085; }
+    @media (max-width: 720px) {
+      #navbar { height: auto; padding: 16px 20px; align-items: flex-start; gap: 10px; }
+      .hero { margin-top: 86px; padding: 56px 20px 42px; }
+      .wrap { padding: 20px 20px 60px; }
+    }
+  </style>
+</head>
+<body>
+  <header id="navbar">
+    <div><strong>Campus Intelligence</strong></div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="community.html">Community</a>
+      <a href="noticeboard.html">Noticeboard</a>
+      <a href="profile.html">Profile</a>
+      <a href="admin.html" id="adminLink" style="display:none;">Admin</a>
+      <a href="login.html" id="loginLink">Login</a>
+      <a href="#" id="logoutLink" style="display:none;">Logout</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1>Campus Resources</h1>
+    <p>
+      Find study spots, labs, facilities, and support offices. Search by name, type, and building.
+    </p>
+  </section>
+
+  <div class="wrap">
+    <section class="summary-grid">
+      <article class="card"><span class="metric-label">Total</span><div class="metric-value" id="totalCount">0</div><div class="metric-caption">Resources available in the app.</div></article>
+      <article class="card"><span class="metric-label">Open</span><div class="metric-value" id="openCount">0</div><div class="metric-caption">Marked open right now.</div></article>
+      <article class="card"><span class="metric-label">Buildings</span><div class="metric-value" id="buildingCount">0</div><div class="metric-caption">Buildings with at least one resource.</div></article>
+      <article class="card"><span class="metric-label">Most Common</span><div class="metric-value" id="topTypeMetric">-</div><div class="metric-caption">Most common resource type.</div></article>
+    </section>
+
+    <div class="grid" style="margin-top:24px;">
+      <article class="card">
+        <h2 class="section-title">Search & Filters</h2>
+        <p class="section-copy">Use the filters below to quickly find what you need.</p>
+        <div class="controls">
+          <input type="text" id="searchInput" placeholder="Search resource name, building, or description">
+          <select id="typeFilter"><option value="">All resource types</option></select>
+          <select id="buildingFilter"><option value="">All buildings</option></select>
+          <select id="statusFilter">
+            <option value="">All availability states</option>
+            <option value="open">Open only</option>
+            <option value="closed">Closed only</option>
+          </select>
+        </div>
+        <div class="pill-row" id="buildingPills"></div>
+      </article>
+
+      <div class="insight-grid">
+        <article class="card">
+          <h2 class="section-title">Popular Types</h2>
+          <div class="insight-list" id="typeInsights">
+            <div class="empty-state">Loading type analytics...</div>
+          </div>
+        </article>
+        <article class="card">
+          <h2 class="section-title">Buildings</h2>
+          <div class="insight-list" id="buildingInsights">
+            <div class="empty-state">Loading building analytics...</div>
+          </div>
+        </article>
+      </div>
+
+      <section class="resource-list" id="resourceList">
+        <div class="empty-state">Loading resources...</div>
+      </section>
+    </div>
+  </div>
+
+  <script src="/app-assets/session.js"></script>
+  <script>
+    const state = {
+      resources: [],
+      meta: {
+        types: [],
+        buildings: [],
+        summary: { total: 0, open: 0, closed: 0 },
+        typeBreakdown: [],
+        buildingBreakdown: []
+      }
+    };
+    let resourceLoadController = null;
+
+    function escapeHtml(value) {
+      const node = document.createElement('div');
+      node.textContent = value || '';
+      return node.innerHTML;
+    }
+
+    function debounce(fn, delay = 250) {
+      let timer = null;
+      return (...args) => {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(() => fn(...args), delay);
+      };
+    }
+
+    function renderBarList(containerId, rows, labelKey) {
+      const container = document.getElementById(containerId);
+      if (!rows.length) {
+        container.innerHTML = '<div class="empty-state">No analytics available yet.</div>';
+        return;
+      }
+
+      const maxCount = rows[0].count || 1;
+      container.innerHTML = rows.map((row) => {
+        const width = Math.max(12, Math.round((row.count / maxCount) * 100));
+        return `
+          <div class="insight-item">
+            <div style="flex:1;">
+              <div><strong>${escapeHtml(row[labelKey])}</strong></div>
+              <div class="bar"><span style="width:${width}%"></span></div>
+            </div>
+            <strong>${row.count}</strong>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateSummary() {
+      document.getElementById('totalCount').textContent = state.meta.summary.total || 0;
+      document.getElementById('openCount').textContent = state.meta.summary.open || 0;
+      document.getElementById('buildingCount').textContent = (state.meta.buildings || []).length;
+      document.getElementById('topTypeMetric').textContent = state.meta.typeBreakdown[0]?.type || '-';
+      renderBarList('typeInsights', state.meta.typeBreakdown || [], 'type');
+      renderBarList('buildingInsights', state.meta.buildingBreakdown || [], 'building_name');
+    }
+
+    function populateFilters() {
+      const typeFilter = document.getElementById('typeFilter');
+      const buildingFilter = document.getElementById('buildingFilter');
+      const buildingPills = document.getElementById('buildingPills');
+
+      typeFilter.innerHTML = '<option value="">All resource types</option>';
+      (state.meta.types || []).forEach((type) => {
+        typeFilter.innerHTML += `<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`;
+      });
+
+      buildingFilter.innerHTML = '<option value="">All buildings</option>';
+      buildingPills.innerHTML = '<button class="pill active" data-building="">All Buildings</button>';
+      (state.meta.buildings || []).forEach((building) => {
+        buildingFilter.innerHTML += `<option value="${escapeHtml(building.code)}">${escapeHtml(building.name)}</option>`;
+        buildingPills.innerHTML += `<button class="pill" data-building="${escapeHtml(building.code)}">${escapeHtml(building.name)}</button>`;
+      });
+
+      buildingPills.querySelectorAll('.pill').forEach((pill) => {
+        pill.addEventListener('click', () => {
+          document.getElementById('buildingFilter').value = pill.dataset.building || '';
+          buildingPills.querySelectorAll('.pill').forEach((node) => node.classList.remove('active'));
+          pill.classList.add('active');
+          loadResources().catch(showError);
+        });
+      });
+    }
+
+    async function loadMeta() {
+      const response = await fetch('/api/resources/meta/filters', { credentials: 'include' });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.message || 'Could not load resource metadata.');
+      }
+
+      state.meta = payload.data || state.meta;
+      updateSummary();
+      populateFilters();
+    }
+
+    async function loadResources() {
+      if (resourceLoadController) {
+        resourceLoadController.abort();
+      }
+      resourceLoadController = new AbortController();
+
+      const query = new URLSearchParams();
+      const search = document.getElementById('searchInput').value.trim();
+      const type = document.getElementById('typeFilter').value;
+      const buildingCode = document.getElementById('buildingFilter').value;
+      const status = document.getElementById('statusFilter').value;
+
+      if (search) query.set('search', search);
+      if (type) query.set('type', type);
+      if (buildingCode) query.set('building_code', buildingCode);
+      if (status === 'open') query.set('only_open', 'true');
+
+      const endpoint = query.toString() ? `/api/resources?${query.toString()}` : '/api/resources';
+      const response = await fetch(endpoint, {
+        credentials: 'include',
+        signal: resourceLoadController.signal
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.message || 'Could not load resources.');
+      }
+
+      let resources = payload.data || [];
+      if (status === 'closed') {
+        resources = resources.filter((resource) => !resource.is_open);
+      }
+
+      state.resources = resources;
+      renderResources();
+      resourceLoadController = null;
+    }
+
+    function renderResources() {
+      const list = document.getElementById('resourceList');
+      if (!state.resources.length) {
+        list.innerHTML = '<div class="empty-state">No resources match the current search logic.</div>';
+        return;
+      }
+
+      list.innerHTML = state.resources.map((resource) => {
+        const statusClass = resource.is_open ? 'open' : 'closed';
+        const statusLabel = resource.is_open ? 'Open now' : 'Currently closed';
+        return `
+          <article class="resource-card" onclick="window.location.href='resource-details.html?id=${resource.id}'">
+            <div class="resource-meta">
+              <span class="badge building">${escapeHtml(resource.building_name || resource.building_code || 'No building')}</span>
+            </div>
+            <h3>${escapeHtml(resource.name)}</h3>
+            <div class="resource-badges">
+              <span class="badge type">${escapeHtml(resource.type)}</span>
+              <span class="badge ${statusClass}">${statusLabel}</span>
+            </div>
+            <p>${escapeHtml(resource.description || 'No description available yet.')}</p>
+            <div class="resource-footer">
+              <div><strong>Floor:</strong> ${escapeHtml(resource.floor_number || 'N/A')}</div>
+              <div><strong>Timings:</strong> ${escapeHtml(resource.timings || 'Not listed')}</div>
+              <div><strong>Location:</strong> ${escapeHtml(resource.building_location || 'Not listed')}</div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function showError(error) {
+      if (error?.name === 'AbortError') return;
+      document.getElementById('resourceList').innerHTML = `<div class="empty-state">${escapeHtml(error.message || 'Could not load resources.')}</div>`;
+    }
+
+    const debouncedLoadResources = debounce(() => loadResources().catch(showError), 250);
+
+    document.getElementById('searchInput').addEventListener('input', debouncedLoadResources);
+    document.getElementById('typeFilter').addEventListener('change', () => loadResources().catch(showError));
+    document.getElementById('statusFilter').addEventListener('change', () => loadResources().catch(showError));
+    document.getElementById('buildingFilter').addEventListener('change', (event) => {
+      document.querySelectorAll('#buildingPills .pill').forEach((pill) => {
+        pill.classList.toggle('active', pill.dataset.building === event.target.value);
+      });
+      loadResources().catch(showError);
+    });
+
+    Promise.all([window.CampusSession.fetchCurrentUser(), loadMeta()]).then(() => {
+      return loadResources();
+    }).catch(showError);
+  </script>
+</body>
+</html>

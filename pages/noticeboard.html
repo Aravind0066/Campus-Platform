@@ -1,0 +1,728 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Noticeboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Campus noticeboard with targeted announcements, email sync, and mobile-ready install support.">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Campus Intelligence">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="/pwa/icon.svg">
+  <link rel="apple-touch-icon" href="/pwa/apple-touch-icon.png">
+  <link rel="stylesheet" href="/pwa/pwa.css">
+  <script src="/pwa/pwa-register.js" defer></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Segoe UI", sans-serif; }
+    body { background: #f5f7fb; color: #101828; }
+    #navbar {
+      position: fixed; top: 0; width: 100%; height: 72px; z-index: 1000;
+      background: rgba(10, 16, 30, 0.94); color: white; display: flex;
+      justify-content: space-between; align-items: center; padding: 0 34px; backdrop-filter: blur(16px);
+    }
+    #navbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+    #navbar nav a { color: white; text-decoration: none; font-size: 14px; }
+    .hero {
+      margin-top: 72px; padding: 78px 24px 60px; color: white; text-align: center;
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.14), transparent 26%),
+        radial-gradient(circle at top right, rgba(255,255,255,0.08), transparent 24%),
+        linear-gradient(135deg, #172554 0%, #7c3aed 38%, #db2777 72%, #ea580c 100%);
+    }
+    .hero h1 { font-size: clamp(2.1rem, 4vw, 3.4rem); margin-bottom: 14px; }
+    .hero p { max-width: 920px; margin: 0 auto; line-height: 1.7; opacity: 0.94; }
+    .wrap { max-width: 1220px; margin: 0 auto; padding: 28px 24px 72px; }
+    .summary-grid, .insight-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px;
+    }
+    .summary-grid { margin-top: -38px; }
+    .card, .notice-card, .empty-state {
+      background: white; border-radius: 24px; border: 1px solid rgba(148, 163, 184, 0.18);
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+    }
+    .card { padding: 24px; }
+    .metric-label { color: #667085; font-size: 13px; margin-bottom: 10px; display: block; }
+    .metric-value { font-size: 2rem; font-weight: 700; margin-bottom: 6px; }
+    .metric-caption { color: #475467; font-size: 13px; line-height: 1.5; }
+    .stack { display: grid; gap: 20px; margin-top: 24px; }
+    .section-title { font-size: 1.25rem; margin-bottom: 10px; }
+    .section-copy { color: #475467; line-height: 1.65; margin-bottom: 16px; }
+    .filter-row, .sync-grid, .modal-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px;
+    }
+    .filter-row input, .filter-row select, .sync-grid input, .sync-grid textarea, .sync-grid select,
+    .modal-grid input, .modal-grid textarea, .modal-grid select {
+      width: 100%; padding: 13px 14px; border: 1px solid #d0d5dd; border-radius: 14px; font-size: 14px;
+      background: #fff;
+    }
+    .sync-grid textarea, .modal-grid textarea { min-height: 96px; resize: vertical; }
+    .sync-actions, .pill-row, .notice-topline { display: flex; gap: 10px; flex-wrap: wrap; }
+    .sync-actions { margin-top: 16px; }
+    .btn {
+      border: none; border-radius: 14px; padding: 12px 16px; font-size: 14px; font-weight: 700; cursor: pointer;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn.primary { background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); color: white; }
+    .btn.secondary { background: #eef2ff; color: #3730a3; }
+    .btn.delete { background: #b42318; color: white; }
+    .status-line { margin-top: 14px; min-height: 20px; font-size: 13px; color: #475467; }
+    .pill, .badge {
+      display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 6px 12px;
+      font-size: 12px; font-weight: 700;
+    }
+    .pill { background: #f2f4f7; color: #344054; }
+    .badge.normal { background: #eaecf0; color: #344054; }
+    .badge.important { background: #fef0c7; color: #b54708; }
+    .badge.emergency { background: #fee4e2; color: #b42318; }
+    .badge.email { background: #eff8ff; color: #175cd3; }
+    .badge.manual { background: #ecfdf3; color: #067647; }
+    .badge.topic { background: #eef2ff; color: #4338ca; }
+    .badge.audience { background: #fdf2fa; color: #c11574; }
+    .insight-list { display: grid; gap: 12px; margin-top: 8px; }
+    .insight-item {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 12px 14px; background: #f8fafc; border-radius: 16px; color: #344054;
+    }
+    .bar { height: 8px; background: #e4e7ec; border-radius: 999px; overflow: hidden; margin-top: 8px; }
+    .bar > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #2563eb, #7c3aed); }
+    .notice-list { display: grid; gap: 18px; }
+    .notice-card { padding: 24px; }
+    .notice-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
+    .notice-title { font-size: 1.18rem; margin: 10px 0 8px; }
+    .notice-meta { color: #667085; font-size: 13px; line-height: 1.6; margin-bottom: 12px; }
+    .notice-body { color: #475467; line-height: 1.7; white-space: pre-line; }
+    .empty-state { padding: 30px; text-align: center; color: #667085; }
+    .add-notice-btn {
+      position: fixed; bottom: 28px; right: 28px; width: 60px; height: 60px; border-radius: 50%;
+      border: none; background: linear-gradient(135deg, #111827 0%, #1d4ed8 100%); color: white; font-size: 32px;
+      cursor: pointer; box-shadow: 0 16px 36px rgba(15, 23, 42, 0.22); display: none;
+    }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.54); z-index: 2000; }
+    .modal.active { display: grid; place-items: center; }
+    .modal-content {
+      width: min(92vw, 720px); background: white; border-radius: 24px; padding: 26px;
+      box-shadow: 0 28px 64px rgba(15, 23, 42, 0.24);
+    }
+    .modal-content h3 { margin-bottom: 18px; }
+    @media (max-width: 720px) {
+      #navbar { height: auto; padding: 16px 20px; align-items: flex-start; gap: 10px; }
+      .hero { margin-top: 86px; padding: 56px 20px 42px; }
+      .wrap { padding: 20px 20px 60px; }
+    }
+  </style>
+</head>
+<body>
+  <header id="navbar">
+    <div><strong>Campus Intelligence</strong></div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="resources.html">Resources</a>
+      <a href="community.html">Community</a>
+      <a href="profile.html">Profile</a>
+      <a href="admin.html" id="adminLink" style="display:none;">Admin</a>
+      <a href="login.html" id="loginLink">Login</a>
+      <a href="#" id="logoutLink" style="display:none;">Logout</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1>Student Notice Pulse</h1>
+    <p>
+      A structured announcement workflow for campus life: manual admin notices, audience targeting,
+      email-imported academic updates, sync diagnostics, topic grouping, and optional browser alerts.
+    </p>
+  </section>
+
+  <div class="wrap">
+    <section class="summary-grid" id="summaryGrid">
+      <article class="card"><span class="metric-label">Active Notices</span><div class="metric-value" id="totalNoticesMetric">0</div><div class="metric-caption">Live notices currently visible on the board.</div></article>
+      <article class="card"><span class="metric-label">Email Imports</span><div class="metric-value" id="emailImportMetric">0</div><div class="metric-caption">Inbox-synced notices classified into student topics.</div></article>
+      <article class="card"><span class="metric-label">Critical Alerts</span><div class="metric-value" id="emergencyMetric">0</div><div class="metric-caption">High-priority items that need immediate student attention.</div></article>
+      <article class="card"><span class="metric-label">Viewed By You</span><div class="metric-value" id="viewedMetric">0</div><div class="metric-caption">Notice interactions tracked for the current authenticated session.</div></article>
+    </section>
+
+    <section class="stack">
+      <article class="card">
+        <h2 class="section-title">Academic Inbox Bridge</h2>
+        <p class="section-copy">
+          Connect a student inbox with an IMAP app password. The system checks sender allowlists, keyword rules,
+          topic classification, and last sync diagnostics before importing notices.
+        </p>
+        <div class="pill-row" style="margin-bottom:16px;">
+          <span class="pill">Provider auto-detection for common student domains</span>
+          <span class="pill">Keyword-based notice filtering</span>
+          <span class="pill">Topic classification: Exams, Placements, Academics, Events</span>
+          <span class="pill">Saved inbox settings try auto-sync on login</span>
+        </div>
+        <div class="sync-grid">
+          <input type="email" id="syncEmail" placeholder="Connected inbox email" autocomplete="email">
+          <input type="password" id="syncPassword" placeholder="Leave blank to reuse saved app password">
+          <label class="pill" style="justify-content:flex-start;">
+            <input type="checkbox" id="syncAuto" checked> Auto-sync every minute
+          </label>
+        </div>
+        <div class="sync-actions">
+          <button class="btn primary" id="connectSyncBtn" onclick="connectAndSync()">Connect & Sync</button>
+          <button class="btn secondary" onclick="enableBrowserAlerts()">Enable Browser Alerts</button>
+        </div>
+        <div class="status-line" id="syncStatus">Sign in to connect inbox notice sync.</div>
+        <div class="status-line" id="alertStatus">Browser alerts are optional and off by default.</div>
+      </article>
+
+      <div class="insight-grid">
+        <article class="card">
+          <h2 class="section-title">Notice Filters</h2>
+          <div class="filter-row">
+            <input type="text" id="searchInput" placeholder="Search title, sender, body, or topic">
+            <select id="sourceFilter">
+              <option value="">All sources</option>
+              <option value="manual">Manual admin notices</option>
+              <option value="email">Email imports</option>
+            </select>
+            <select id="priorityFilter">
+              <option value="">All priorities</option>
+              <option value="normal">Normal</option>
+              <option value="important">Important</option>
+              <option value="emergency">Emergency</option>
+            </select>
+            <select id="categoryFilter">
+              <option value="">All topics</option>
+            </select>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2 class="section-title">Topic Distribution</h2>
+          <div class="insight-list" id="topicInsights">
+            <div class="empty-state">Loading topic insights...</div>
+          </div>
+        </article>
+      </div>
+
+      <section class="notice-list" id="noticeList">
+        <div class="empty-state">Loading notices...</div>
+      </section>
+    </section>
+  </div>
+
+  <button class="add-notice-btn" id="addNoticeBtn" onclick="openModal()">+</button>
+
+  <div class="modal" id="noticeModal">
+    <div class="modal-content">
+      <h3>Create Notice</h3>
+      <div class="modal-grid">
+        <input type="text" id="noticeTitle" placeholder="Notice title">
+        <input type="text" id="noticeCategory" placeholder="Topic / category (e.g. Academics, Hostel)">
+      </div>
+      <textarea id="noticeBody" placeholder="Write the notice body"></textarea>
+      <div class="modal-grid">
+        <select id="noticePriority">
+          <option value="normal">Normal</option>
+          <option value="important">Important</option>
+          <option value="emergency">Emergency</option>
+        </select>
+        <select id="noticeAudience">
+          <option value="all">All audiences</option>
+          <option value="students">Students only</option>
+          <option value="faculty">Faculty only</option>
+          <option value="staff">Staff only</option>
+        </select>
+      </div>
+      <div class="sync-actions">
+        <button class="btn primary" onclick="submitNotice()">Publish Notice</button>
+        <button class="btn secondary" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app-assets/session.js"></script>
+  <script src="/js/notifications.js"></script>
+  <script>
+    let currentUser = null;
+    let allNotices = [];
+    let summaryData = null;
+    let activeNoticeboardUserId = null;
+    let autoSyncedUserId = null;
+    let noticeRefreshController = null;
+
+    function escapeHtml(value) {
+      const node = document.createElement('div');
+      node.textContent = value || '';
+      return node.innerHTML;
+    }
+
+    function showSyncStatus(message, isError = false) {
+      const status = document.getElementById('syncStatus');
+      status.style.color = isError ? '#b42318' : '#475467';
+      status.textContent = message;
+    }
+
+    function showAlertStatus(message, isError = false) {
+      const status = document.getElementById('alertStatus');
+      status.style.color = isError ? '#b42318' : '#475467';
+      status.textContent = message;
+    }
+
+    function openModal() {
+      document.getElementById('noticeModal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('noticeModal').classList.remove('active');
+      document.getElementById('noticeTitle').value = '';
+      document.getElementById('noticeCategory').value = '';
+      document.getElementById('noticeBody').value = '';
+      document.getElementById('noticePriority').value = 'normal';
+      document.getElementById('noticeAudience').value = 'all';
+    }
+
+    function populateCategoryFilter(categories) {
+      const select = document.getElementById('categoryFilter');
+      const currentValue = select.value;
+      select.innerHTML = '<option value="">All topics</option>';
+      (categories || []).forEach((item) => {
+        select.innerHTML += `<option value="${escapeHtml(item.category)}">${escapeHtml(item.category)}</option>`;
+      });
+      select.value = currentValue;
+    }
+
+    function renderSummary() {
+      if (!summaryData) return;
+      document.getElementById('totalNoticesMetric').textContent = summaryData.totals.total || 0;
+      document.getElementById('emailImportMetric').textContent = summaryData.totals.email_count || 0;
+      document.getElementById('emergencyMetric').textContent = summaryData.totals.emergency_count || 0;
+      document.getElementById('viewedMetric').textContent = summaryData.viewer.viewed || 0;
+
+      const topicInsights = document.getElementById('topicInsights');
+      const topCategories = summaryData.byCategory || [];
+      if (!topCategories.length) {
+        topicInsights.innerHTML = '<div class="empty-state">No topic analytics available yet.</div>';
+      } else {
+        const maxCount = topCategories[0].count || 1;
+        topicInsights.innerHTML = topCategories.map((item) => {
+          const width = Math.max(12, Math.round((item.count / maxCount) * 100));
+          return `
+            <div class="insight-item">
+              <div style="flex:1;">
+                <div><strong>${escapeHtml(item.category)}</strong></div>
+                <div class="bar"><span style="width:${width}%"></span></div>
+              </div>
+              <strong>${item.count}</strong>
+            </div>
+          `;
+        }).join('');
+      }
+
+      populateCategoryFilter(topCategories);
+    }
+
+    function resetFilters() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('sourceFilter').value = '';
+      document.getElementById('priorityFilter').value = '';
+      document.getElementById('categoryFilter').innerHTML = '<option value="">All topics</option>';
+    }
+
+    function resetNoticeboardSessionView() {
+      allNotices = [];
+      summaryData = null;
+      closeModal();
+      resetFilters();
+      document.getElementById('syncEmail').value = '';
+      document.getElementById('syncPassword').value = '';
+      document.getElementById('syncAuto').checked = false;
+      document.getElementById('connectSyncBtn').textContent = 'Connect & Sync';
+      document.getElementById('totalNoticesMetric').textContent = '0';
+      document.getElementById('emailImportMetric').textContent = '0';
+      document.getElementById('emergencyMetric').textContent = '0';
+      document.getElementById('viewedMetric').textContent = '0';
+      document.getElementById('topicInsights').innerHTML = '<div class="empty-state">Loading topic insights...</div>';
+      document.getElementById('noticeList').innerHTML = '<div class="empty-state">Loading notices...</div>';
+    }
+
+    function debounce(fn, delay = 250) {
+      let timer = null;
+      return (...args) => {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(() => fn(...args), delay);
+      };
+    }
+
+    async function loadSummary() {
+      const response = await fetch('/api/notices/summary/overview', { credentials: 'include' });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.message || 'Could not load notice analytics.');
+      }
+      summaryData = payload.data;
+      renderSummary();
+    }
+
+    let isBootstrapping = false;
+
+    function clearForLoggedOut() {
+      activeNoticeboardUserId = null;
+      autoSyncedUserId = null;
+      currentUser = null;
+      resetNoticeboardSessionView();
+      document.getElementById('addNoticeBtn').style.display = 'none';
+      showSyncStatus('Sign in to connect inbox notice sync.');
+      showAlertStatus('Browser alerts are optional and off by default.');
+      document.getElementById('topicInsights').innerHTML = '<div class="empty-state">Sign in to see topic analytics.</div>';
+      document.getElementById('noticeList').innerHTML = '<div class="empty-state">Please log in to view notices.</div>';
+    }
+
+    window.addEventListener('CampusSession:updated', async (event) => {
+      if (isBootstrapping) return;
+      const user = event?.detail?.user || null;
+      if (!user) {
+        clearForLoggedOut();
+        return;
+      }
+
+      const userChanged = activeNoticeboardUserId !== user.id;
+      currentUser = user;
+      activeNoticeboardUserId = user.id;
+      if (userChanged) {
+        autoSyncedUserId = null;
+        resetNoticeboardSessionView();
+      }
+      document.getElementById('addNoticeBtn').style.display = user?.role === 'admin' ? 'block' : 'none';
+      try {
+        const account = await loadEmailSettings();
+        const autoSynced = await maybeAutoSync(account);
+        await Promise.all([loadSummary(), loadNotices()]);
+        if (autoSynced) {
+          await Promise.all([loadEmailSettings(), loadSummary(), loadNotices()]);
+        }
+      } catch (err) {
+        document.getElementById('noticeList').innerHTML =
+          `<div class="empty-state">${escapeHtml(err.message || 'Could not load notices.')}</div>`;
+      }
+    });
+
+    async function bootstrap() {
+      isBootstrapping = true;
+      try {
+        currentUser = await window.CampusSession.fetchCurrentUser();
+        activeNoticeboardUserId = currentUser?.id || null;
+        document.getElementById('addNoticeBtn').style.display = currentUser?.role === 'admin' ? 'block' : 'none';
+
+        if (!currentUser) {
+          clearForLoggedOut();
+          return;
+        }
+
+        resetNoticeboardSessionView();
+        const account = await loadEmailSettings();
+        const autoSynced = await maybeAutoSync(account);
+        await Promise.all([loadSummary(), loadNotices()]);
+        if (autoSynced) {
+          await Promise.all([loadEmailSettings(), loadSummary(), loadNotices()]);
+        }
+
+        if (window.CampusNoticeAlerts?.getPermission() === 'granted') {
+          showAlertStatus('Browser alerts are enabled for new notices.');
+        }
+      } finally {
+        isBootstrapping = false;
+      }
+    }
+
+    async function loadEmailSettings() {
+      try {
+        const response = await fetch('/api/notices/email/settings', { credentials: 'include' });
+        const payload = await response.json();
+        if (!response.ok || !payload.success) {
+          showSyncStatus('Sign in to connect inbox notice sync.', true);
+          return null;
+        }
+
+        const account = payload.data;
+        if (!account) {
+          showSyncStatus('No inbox connected yet. Enter email + app password to connect.');
+          document.getElementById('syncEmail').value = '';
+          document.getElementById('syncPassword').value = '';
+          document.getElementById('syncAuto').checked = false;
+          document.getElementById('connectSyncBtn').textContent = 'Connect & Sync';
+          return null;
+        }
+
+        document.getElementById('syncEmail').value = account.emailAddress || '';
+        document.getElementById('syncPassword').value = '';
+        document.getElementById('syncAuto').checked = Boolean(account.isActive);
+        document.getElementById('connectSyncBtn').textContent = 'Sync Now';
+
+        const lastSyncText = account.lastSyncedAt ? new Date(account.lastSyncedAt).toLocaleString() : 'not run yet';
+        const autoText = account.isActive ? '' : ' | Auto-sync OFF';
+        const errText = account.lastError ? ` | Last error: ${account.lastError}` : '';
+        showSyncStatus(`Inbox ready. Last sync: ${lastSyncText}${autoText}${errText}`);
+        return account;
+      } catch (err) {
+        showSyncStatus('Could not load inbox settings.', true);
+        return null;
+      }
+    }
+
+    async function maybeAutoSync(account) {
+      if (!account || !account.isActive || !account.hasPassword || !currentUser) {
+        return false;
+      }
+
+      if (autoSyncedUserId === currentUser.id) {
+        return false;
+      }
+
+      autoSyncedUserId = currentUser.id;
+      showSyncStatus('Saved inbox found. Syncing notices automatically...');
+
+      const response = await fetch('/api/notices/email/sync', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      const payload = await response.json();
+
+      if (!response.ok || !payload.success) {
+        showSyncStatus(payload.message || 'Automatic inbox sync failed.', true);
+        return false;
+      }
+
+      showSyncStatus(`${payload.message} Scanned ${payload.data.scannedCount}, matched ${payload.data.matchedCount}.`);
+      return true;
+    }
+
+    async function connectAndSync() {
+      const user = await window.CampusSession.requireUser();
+      if (!user) return;
+
+      try {
+        showSyncStatus('Connecting inbox and verifying settings...');
+
+        const emailAddress = document.getElementById('syncEmail').value.trim();
+        const appPassword = document.getElementById('syncPassword').value;
+        const isActive = Boolean(document.getElementById('syncAuto').checked);
+
+        const saveResponse = await fetch('/api/notices/email/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ emailAddress, appPassword, isActive })
+        });
+
+        const savePayload = await saveResponse.json();
+        if (!saveResponse.ok || !savePayload.success) {
+          showSyncStatus(savePayload.message || 'Could not save inbox settings.', true);
+          return;
+        }
+
+        if (appPassword && String(appPassword).trim().length) {
+          document.getElementById('syncPassword').value = '';
+        }
+
+        showSyncStatus('Syncing inbox notices...');
+
+        const syncResponse = await fetch('/api/notices/email/sync', {
+          method: 'POST',
+          credentials: 'include'
+        });
+        const syncPayload = await syncResponse.json();
+        if (!syncResponse.ok || !syncPayload.success) {
+          showSyncStatus(syncPayload.message || 'Inbox sync failed.', true);
+          return;
+        }
+
+        showSyncStatus(`${syncPayload.message} Scanned ${syncPayload.data.scannedCount}, matched ${syncPayload.data.matchedCount}.`);
+        await Promise.all([loadEmailSettings(), loadSummary(), loadNotices()]);
+      } catch (err) {
+        showSyncStatus('Network error while connecting/syncing inbox.', true);
+      }
+    }
+
+    async function enableBrowserAlerts() {
+      if (!window.CampusNoticeAlerts) {
+        showAlertStatus('Browser alerts are not available in this page.', true);
+        return;
+      }
+
+      const granted = await window.CampusNoticeAlerts.enable();
+      if (granted) {
+        showAlertStatus('Browser alerts are enabled for new notices.');
+      } else {
+        showAlertStatus('Permission was not granted for browser alerts.', true);
+      }
+    }
+
+    async function loadNotices() {
+      if (noticeRefreshController) {
+        noticeRefreshController.abort();
+      }
+      noticeRefreshController = new AbortController();
+
+      const response = await fetch('/api/notices', {
+        credentials: 'include',
+        signal: noticeRefreshController.signal
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.message || 'Could not load notices.');
+      }
+      allNotices = payload.data || [];
+      renderNotices();
+      noticeRefreshController = null;
+    }
+
+    function getFilteredNotices() {
+      const search = document.getElementById('searchInput').value.trim().toLowerCase();
+      const source = document.getElementById('sourceFilter').value;
+      const priority = document.getElementById('priorityFilter').value;
+      const category = document.getElementById('categoryFilter').value;
+
+      return allNotices.filter((notice) => {
+        const blob = `${notice.title || ''} ${notice.body || ''} ${notice.source_sender_email || ''} ${notice.category || ''}`.toLowerCase();
+        const matchesSearch = !search || blob.includes(search);
+        const matchesSource = !source || notice.source_type === source;
+        const matchesPriority = !priority || notice.priority === priority;
+        const matchesCategory = !category || (notice.category || 'Uncategorized') === category;
+        return matchesSearch && matchesSource && matchesPriority && matchesCategory;
+      });
+    }
+
+    function renderNotices() {
+      const container = document.getElementById('noticeList');
+      const notices = getFilteredNotices();
+
+      if (!notices.length) {
+        container.innerHTML = '<div class="empty-state">No notices match the current filters.</div>';
+        return;
+      }
+
+      container.innerHTML = notices.map((notice) => {
+        const sourceBadge = notice.source_type === 'email'
+          ? '<span class="badge email">Email Import</span>'
+          : '<span class="badge manual">Admin Post</span>';
+        const topicBadge = notice.category ? `<span class="badge topic">${escapeHtml(notice.category)}</span>` : '';
+        const audienceBadge = notice.target_audience && notice.target_audience !== 'all'
+          ? `<span class="badge audience">${escapeHtml(notice.target_audience.toUpperCase())}</span>`
+          : '';
+        const adminDelete = currentUser?.role === 'admin'
+          ? `<button class="btn delete" onclick="deleteNotice(event, ${notice.id})">Delete</button>`
+          : '';
+        const createdBy = notice.source_type === 'email'
+          ? `${escapeHtml(notice.source_sender_name || notice.source_sender_email || 'Connected inbox')}`
+          : `${escapeHtml(notice.created_by_name || 'Admin')}`;
+        const sourceLine = notice.source_type === 'email' && notice.source_sender_email
+          ? `<div>Imported from <strong>${escapeHtml(notice.source_sender_email)}</strong></div>`
+          : '<div>Published manually by the campus admin workflow.</div>';
+
+        return `
+          <article class="notice-card" onclick="trackView(${notice.id})">
+            <div class="notice-header">
+              <div style="flex:1;">
+                <div class="notice-topline">
+                  <span class="badge ${escapeHtml(notice.priority || 'normal')}">${escapeHtml((notice.priority || 'normal').toUpperCase())}</span>
+                  ${sourceBadge}
+                  ${topicBadge}
+                  ${audienceBadge}
+                </div>
+                <div class="notice-title">${escapeHtml(notice.title)}</div>
+              </div>
+              ${adminDelete}
+            </div>
+            <div class="notice-meta">
+              <div>Posted by <strong>${createdBy}</strong> on ${new Date(notice.created_at).toLocaleString()}</div>
+              ${sourceLine}
+              <div>Tracked views: ${notice.view_count || 0}</div>
+            </div>
+            <div class="notice-body">${escapeHtml(notice.body)}</div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    async function trackView(noticeId) {
+      if (!currentUser) return;
+      try {
+        const response = await fetch(`/api/notices/${noticeId}/view`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+        const payload = await response.json().catch(() => null);
+        if (response.ok && payload?.counted && summaryData?.viewer) {
+          summaryData.viewer.viewed = (summaryData.viewer.viewed || 0) + 1;
+          document.getElementById('viewedMetric').textContent = summaryData.viewer.viewed;
+        }
+      } catch (err) {
+        // Ignore view tracking errors.
+      }
+    }
+
+    async function submitNotice() {
+      const user = await window.CampusSession.requireUser();
+      if (!user || user.role !== 'admin') return;
+
+      try {
+        const response = await fetch('/api/notices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            title: document.getElementById('noticeTitle').value.trim(),
+            category: document.getElementById('noticeCategory').value.trim(),
+            body: document.getElementById('noticeBody').value.trim(),
+            priority: document.getElementById('noticePriority').value,
+            target_audience: document.getElementById('noticeAudience').value
+          })
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.success) {
+          alert(payload.message || 'Could not create the notice.');
+          return;
+        }
+
+        closeModal();
+        await Promise.all([loadSummary(), loadNotices()]);
+      } catch (err) {
+        alert('Network error while creating the notice.');
+      }
+    }
+
+    async function deleteNotice(event, id) {
+      event.stopPropagation();
+      if (!confirm('Delete this notice?')) return;
+
+      try {
+        const response = await fetch(`/api/notices/${id}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.success) {
+          alert(payload.message || 'Could not delete the notice.');
+          return;
+        }
+        await Promise.all([loadSummary(), loadNotices()]);
+      } catch (err) {
+        alert('Network error while deleting the notice.');
+      }
+    }
+
+    document.getElementById('noticeModal').addEventListener('click', (event) => {
+      if (event.target.id === 'noticeModal') closeModal();
+    });
+
+    const debouncedRenderNotices = debounce(renderNotices, 120);
+    document.getElementById('searchInput').addEventListener('input', debouncedRenderNotices);
+    ['sourceFilter', 'priorityFilter', 'categoryFilter'].forEach((id) => {
+      document.getElementById(id).addEventListener('change', renderNotices);
+    });
+
+    bootstrap().catch((error) => {
+      document.getElementById('noticeList').innerHTML = `<div class="empty-state">${escapeHtml(error.message || 'Could not load notices.')}</div>`;
+    });
+  </script>
+</body>
+</html>

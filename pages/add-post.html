@@ -1,0 +1,178 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Create Post - Campus Intelligence</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Create campus posts with installable mobile app support.">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Campus Intelligence">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="/pwa/icon.svg">
+  <link rel="apple-touch-icon" href="/pwa/apple-touch-icon.png">
+  <link rel="stylesheet" href="/pwa/pwa.css">
+  <script src="/pwa/pwa-register.js" defer></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Segoe UI", sans-serif; }
+    body { background: #f5f7fb; color: #101828; }
+    .wrap { max-width: 860px; margin: 40px auto; padding: 20px; }
+    .card {
+      background: white; border-radius: 20px; padding: 28px;
+      box-shadow: 0 16px 32px rgba(15, 23, 42, 0.1);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    h1 { margin-bottom: 10px; }
+    p { color: #667085; margin-bottom: 20px; }
+    .grid { display: grid; gap: 14px; }
+    input, select, textarea, button {
+      width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #d0d5dd; font-size: 14px;
+    }
+    textarea { min-height: 120px; resize: vertical; }
+    button { border: none; cursor: pointer; font-weight: 700; color: white; background: linear-gradient(135deg, #1d4ed8, #0f766e); }
+    .status { min-height: 20px; margin-top: 12px; font-size: 13px; color: #b42318; }
+    .back { margin-bottom: 14px; display: inline-block; text-decoration: none; color: #1d4ed8; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <a href="community.html" class="back">Back to Community</a>
+    <section class="card">
+      <h1>Create a Community Post</h1>
+      <p>Publish student updates or questions with synced categories, priority, and optional expiry control.</p>
+
+      <div class="grid">
+        <select id="postType" onchange="toggleFields()">
+          <option value="update">Update</option>
+          <option value="query">Query</option>
+        </select>
+        <select id="category"></select>
+      </div>
+
+      <div class="grid" id="updateFields" style="margin-top:14px;">
+        <textarea id="updateContent" placeholder="Write your update"></textarea>
+        <select id="expiryDuration">
+          <option value="1">Expires in 1 hour</option>
+          <option value="4">Expires in 4 hours</option>
+          <option value="24">Expires in 24 hours</option>
+        </select>
+        <select id="priority">
+          <option value="normal">Normal</option>
+          <option value="important">Important</option>
+        </select>
+      </div>
+
+      <div class="grid" id="queryFields" style="display:none; margin-top:14px;">
+        <input type="text" id="queryTitle" placeholder="Query title">
+        <textarea id="queryDesc" placeholder="Describe the query clearly"></textarea>
+        <select id="queryPriority">
+          <option value="normal">Normal</option>
+          <option value="important">Important</option>
+        </select>
+      </div>
+
+      <button style="margin-top:16px;" onclick="submitPost()">Submit Post</button>
+      <div class="status" id="statusLine"></div>
+    </section>
+  </main>
+
+  <script src="/app-assets/session.js"></script>
+  <script>
+    function showStatus(message, isError = true) {
+      const node = document.getElementById('statusLine');
+      node.style.color = isError ? '#b42318' : '#067647';
+      node.textContent = message || '';
+    }
+
+    function toggleFields() {
+      const isUpdate = document.getElementById('postType').value === 'update';
+      document.getElementById('updateFields').style.display = isUpdate ? 'grid' : 'none';
+      document.getElementById('queryFields').style.display = isUpdate ? 'none' : 'grid';
+    }
+
+    function buildExpiry(hours) {
+      const d = new Date(Date.now() + (hours * 60 * 60 * 1000));
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    async function loadCategories() {
+      const select = document.getElementById('category');
+      select.innerHTML = '';
+
+      try {
+        const response = await fetch('/api/posts/categories', { credentials: 'include' });
+        const payload = await response.json();
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.message || 'Could not load categories.');
+        }
+
+        (payload.data || []).forEach((item) => {
+          const option = document.createElement('option');
+          option.value = item.name;
+          option.textContent = item.name;
+          select.appendChild(option);
+        });
+      } catch (err) {
+        ['Classroom', 'Library', 'WiFi', 'Hostel', 'Transport', 'Other'].forEach((name) => {
+          const option = document.createElement('option');
+          option.value = name;
+          option.textContent = name;
+          select.appendChild(option);
+        });
+      }
+    }
+
+    async function submitPost() {
+      const user = await window.CampusSession.requireUser();
+      if (!user) return;
+
+      const type = document.getElementById('postType').value;
+      const category = document.getElementById('category').value;
+      let title = '';
+      let body = '';
+      let priority = 'normal';
+      let expires_at = null;
+
+      if (type === 'update') {
+        body = document.getElementById('updateContent').value.trim();
+        if (!body) return showStatus('Please write update content.');
+        title = body.slice(0, 80);
+        priority = document.getElementById('priority').value;
+        expires_at = buildExpiry(parseInt(document.getElementById('expiryDuration').value, 10));
+      } else {
+        title = document.getElementById('queryTitle').value.trim();
+        body = document.getElementById('queryDesc').value.trim();
+        priority = document.getElementById('queryPriority').value;
+        if (!title || !body) return showStatus('Please fill query title and description.');
+      }
+
+      showStatus('Submitting post...', false);
+      try {
+        const response = await fetch('/api/posts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ type, title, body, category, priority, expires_at })
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.success) {
+          showStatus(payload.message || 'Could not create post.');
+          return;
+        }
+        showStatus('Post created successfully.', false);
+        window.location.href = 'community.html';
+      } catch (err) {
+        showStatus('Network error while creating post.');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await window.CampusSession.requireUser();
+      await loadCategories();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,618 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard - Campus Intelligence</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Campus Intelligence admin dashboard with installable mobile web support.">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Campus Intelligence">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="/pwa/icon.svg">
+  <link rel="apple-touch-icon" href="/pwa/apple-touch-icon.png">
+  <link rel="stylesheet" href="/pwa/pwa.css">
+  <script src="/pwa/pwa-register.js" defer></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Segoe UI", sans-serif; }
+    body { background: #f5f7fb; color: #101828; }
+    #navbar {
+      position: fixed; top: 0; width: 100%; height: 72px; z-index: 1000;
+      background: rgba(10, 16, 30, 0.94); color: white; display: flex;
+      justify-content: space-between; align-items: center; padding: 0 34px;
+    }
+    #navbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+    #navbar nav a { color: white; text-decoration: none; font-size: 14px; }
+    .hero {
+      margin-top: 72px; padding: 66px 24px 40px; color: white; text-align: center;
+      background: linear-gradient(135deg, #7f1d1d 0%, #b91c1c 55%, #1e40af 100%);
+    }
+    .hero h1 { font-size: clamp(2rem, 4vw, 3rem); margin-bottom: 10px; }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 24px; }
+    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 20px; }
+    .card, .table-card {
+      background: white; border-radius: 18px; border: 1px solid rgba(148, 163, 184, 0.2);
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    }
+    .card { padding: 18px; }
+    .value { font-size: 1.9rem; font-weight: 700; }
+    .label { color: #667085; font-size: 13px; }
+    .table-card { padding: 18px; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 980px; }
+    th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eaecf0; vertical-align: top; }
+    th { font-size: 12px; color: #667085; text-transform: uppercase; }
+    .badge { border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 700; display: inline-block; }
+    .admin { background: #fee4e2; color: #b42318; }
+    .student { background: #dcfae6; color: #067647; }
+    .active { background: #dcfae6; color: #067647; }
+    .inactive { background: #eaecf0; color: #344054; }
+    .suspended { background: #fef0c7; color: #b54708; }
+    .muted { color: #667085; font-size: 13px; line-height: 1.5; }
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d0d5dd;
+      border-radius: 10px;
+      font-size: 14px;
+    }
+    textarea { min-height: 90px; resize: vertical; }
+    button {
+      border: none; border-radius: 8px; padding: 8px 10px; font-size: 12px; cursor: pointer; margin-right: 6px;
+    }
+    .promote { background: #1d4ed8; color: white; }
+    .delete { background: #b42318; color: white; }
+    .save { background: #0f766e; color: white; }
+  </style>
+</head>
+<body>
+  <header id="navbar">
+    <div><strong>Campus Intelligence</strong></div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="resources.html">Resources</a>
+      <a href="community.html">Community</a>
+      <a href="noticeboard.html">Noticeboard</a>
+      <a href="profile.html">Profile</a>
+      <a href="#" id="logoutLink" style="display:none;">Logout</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1>Admin Control Center</h1>
+    <p>Role, account status, building setup, and full resource management from a single review dashboard.</p>
+  </section>
+
+  <main class="wrap">
+    <section class="grid" id="statsGrid">
+      <article class="card"><div class="value" id="totalUsers">-</div><div class="label">Total users</div></article>
+      <article class="card"><div class="value" id="activeUsers">-</div><div class="label">Active users</div></article>
+      <article class="card"><div class="value" id="suspendedUsers">-</div><div class="label">Suspended users</div></article>
+      <article class="card"><div class="value" id="totalPosts">-</div><div class="label">Total posts</div></article>
+      <article class="card"><div class="value" id="totalResources">-</div><div class="label">Resources</div></article>
+      <article class="card"><div class="value" id="totalNotices">-</div><div class="label">Notices</div></article>
+      <article class="card"><div class="value" id="recentUsers">-</div><div class="label">New users (7d)</div></article>
+      <article class="card"><div class="value" id="recentPosts">-</div><div class="label">New posts (7d)</div></article>
+    </section>
+
+    <section class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Posts</th><th>Joined</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="usersTable">
+          <tr><td colspan="8">Loading users...</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="table-card" style="margin-top:16px;">
+      <h2 style="margin-bottom:8px;">Buildings</h2>
+      <div class="muted" style="margin-bottom:12px;">
+        Add and manage campus buildings. Description now stays editable instead of being wiped during updates.
+      </div>
+
+      <div class="form-row">
+        <input id="buildingCode" placeholder="Code (e.g. TT, MB)" />
+        <input id="buildingName" placeholder="Building name" />
+        <input id="buildingLocation" placeholder="Location (optional)" />
+        <select id="buildingStatus">
+          <option value="active">Active</option>
+          <option value="maintenance">Maintenance</option>
+          <option value="closed">Closed</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <textarea id="buildingDescription" placeholder="Short description (optional)"></textarea>
+        <div style="display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap;">
+          <button class="save" onclick="createBuilding()">Add Building</button>
+          <button class="promote" onclick="loadBuildings()">Refresh</button>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th><th>Code</th><th>Name</th><th>Status</th><th>Location</th><th>Description</th><th>Updated</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="buildingsTable">
+          <tr><td colspan="8">Loading buildings...</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="table-card" style="margin-top:16px;">
+      <h2 style="margin-bottom:8px;">Resources</h2>
+      <div class="muted" style="margin-bottom:12px;">
+        Manage the resource entries students actually search on the campus map.
+      </div>
+
+      <div class="form-row">
+        <select id="resourceBuilding"></select>
+        <input id="resourceName" placeholder="Resource name" />
+        <input id="resourceType" placeholder="Type (e.g. Library, Lab, Support Office)" />
+        <input id="resourceFloor" placeholder="Floor / room" />
+      </div>
+      <div class="form-row">
+        <input id="resourceTimings" placeholder="Timings (e.g. 8 AM - 8 PM)" />
+        <input id="resourceContact" placeholder="Contact info (optional)" />
+        <input id="resourceCapacity" type="number" min="0" placeholder="Capacity (optional)" />
+        <select id="resourceOpen">
+          <option value="1">Open</option>
+          <option value="0">Closed</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <textarea id="resourceDescription" placeholder="Short description"></textarea>
+        <textarea id="resourceEquipment" placeholder="Equipment / facilities (optional)"></textarea>
+      </div>
+      <div class="form-row">
+        <div style="display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap;">
+          <button class="save" onclick="createResource()">Add Resource</button>
+          <button class="promote" onclick="loadResources()">Refresh</button>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th><th>Name</th><th>Type</th><th>Building</th><th>Status</th><th>Timings</th><th>Contact</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="resourcesTable">
+          <tr><td colspan="8">Loading resources...</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="/app-assets/session.js"></script>
+  <script>
+    let currentUser = null;
+    let buildingOptions = [];
+
+    function escapeHtml(value) {
+      const div = document.createElement('div');
+      div.textContent = value || '';
+      return div.innerHTML;
+    }
+
+    async function requireAdmin() {
+      currentUser = await window.CampusSession.requireUser();
+      if (!currentUser) return false;
+      if (currentUser.role !== 'admin') {
+        alert('Admin access required.');
+        window.location.href = 'index.html';
+        return false;
+      }
+      return true;
+    }
+
+    async function loadStats() {
+      const response = await fetch('/api/admin/stats', { credentials: 'include' });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.message || 'Could not load stats.');
+      }
+      const stats = payload.data;
+      document.getElementById('totalUsers').textContent = stats.users.total;
+      document.getElementById('activeUsers').textContent = stats.users.active;
+      document.getElementById('suspendedUsers').textContent = stats.users.suspended;
+      document.getElementById('totalPosts').textContent = stats.posts.total;
+      document.getElementById('totalResources').textContent = stats.resources;
+      document.getElementById('totalNotices').textContent = stats.notices;
+      document.getElementById('recentUsers').textContent = stats.recent.users;
+      document.getElementById('recentPosts').textContent = stats.recent.posts;
+    }
+
+    async function loadUsers() {
+      const response = await fetch('/api/admin/users', { credentials: 'include' });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.message || 'Could not load users.');
+      }
+
+      const users = payload.data || [];
+      const tbody = document.getElementById('usersTable');
+      if (!users.length) {
+        tbody.innerHTML = '<tr><td colspan="8">No users found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = users.map((user) => {
+        const roleClass = user.role === 'admin' ? 'admin' : 'student';
+        const roleToggle = user.role === 'admin' ? 'student' : 'admin';
+        const roleToggleLabel = user.role === 'admin' ? 'Demote' : 'Promote';
+        const isCurrent = currentUser && user.id === currentUser.id;
+        return `
+          <tr>
+            <td>${user.id}</td>
+            <td>${escapeHtml(user.name || '')}</td>
+            <td>${escapeHtml(user.email || '')}</td>
+            <td>
+              <span class="badge ${roleClass}">${escapeHtml(user.role)}</span>
+              ${isCurrent ? '<div class="muted">Current user</div>' : ''}
+            </td>
+            <td>
+              <span class="badge ${escapeHtml(user.status || 'active')}">${escapeHtml((user.status || 'active').toUpperCase())}</span>
+              ${!isCurrent ? `
+                <div style="margin-top:8px;">
+                  <select data-status-id="${user.id}">
+                    <option value="active" ${user.status === 'active' ? 'selected' : ''}>Active</option>
+                    <option value="inactive" ${user.status === 'inactive' ? 'selected' : ''}>Inactive</option>
+                    <option value="suspended" ${user.status === 'suspended' ? 'selected' : ''}>Suspended</option>
+                  </select>
+                </div>
+              ` : ''}
+            </td>
+            <td>${user.post_count || 0}</td>
+            <td>${new Date(user.created_at).toLocaleDateString()}</td>
+            <td>
+              ${isCurrent ? 'Current User' : `
+                <button class="promote" onclick="toggleRole(${user.id}, '${roleToggle}')">${roleToggleLabel}</button>
+                <button class="save" onclick="updateStatus(${user.id})">Save Status</button>
+                <button class="delete" onclick="deleteUser(${user.id})">Delete</button>
+              `}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function toggleRole(userId, role) {
+      if (!confirm('Update user role?')) return;
+      const response = await fetch(`/api/admin/users/${userId}/role`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ role })
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        alert(payload.message || 'Could not update role.');
+        return;
+      }
+      await Promise.all([loadStats(), loadUsers()]);
+    }
+
+    async function updateStatus(userId) {
+      const select = document.querySelector(`[data-status-id="${userId}"]`);
+      if (!select) return;
+
+      const response = await fetch(`/api/admin/users/${userId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status: select.value })
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        alert(payload.message || 'Could not update status.');
+        return;
+      }
+      await Promise.all([loadStats(), loadUsers()]);
+    }
+
+    async function deleteUser(userId) {
+      if (!confirm('Delete this user account?')) return;
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        alert(payload.message || 'Could not delete user.');
+        return;
+      }
+      await Promise.all([loadStats(), loadUsers()]);
+    }
+
+    async function loadBuildings() {
+      const response = await fetch('/api/admin/buildings', { credentials: 'include' });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.message || 'Could not load buildings.');
+      }
+
+      const rows = payload.data || [];
+      buildingOptions = rows;
+      populateResourceBuildings();
+      const tbody = document.getElementById('buildingsTable');
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="8">No buildings found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = rows.map((b) => {
+        return `
+          <tr>
+            <td>${b.id}</td>
+            <td><input value="${escapeHtml(b.code || '')}" data-field="code" data-id="${b.id}" /></td>
+            <td><input value="${escapeHtml(b.name || '')}" data-field="name" data-id="${b.id}" /></td>
+            <td>
+              <select data-field="status" data-id="${b.id}">
+                <option value="active" ${b.status === 'active' ? 'selected' : ''}>Active</option>
+                <option value="maintenance" ${b.status === 'maintenance' ? 'selected' : ''}>Maintenance</option>
+                <option value="closed" ${b.status === 'closed' ? 'selected' : ''}>Closed</option>
+              </select>
+            </td>
+            <td><input value="${escapeHtml(b.location || '')}" data-field="location" data-id="${b.id}" /></td>
+            <td><textarea data-field="description" data-id="${b.id}">${escapeHtml(b.description || '')}</textarea></td>
+            <td>${b.updated_at ? new Date(b.updated_at).toLocaleString() : '-'}</td>
+            <td>
+              <button class="save" onclick="saveBuilding(${b.id})">Save</button>
+              <button class="delete" onclick="deleteBuilding(${b.id})">Delete</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function populateResourceBuildings() {
+      const select = document.getElementById('resourceBuilding');
+      if (!select) return;
+
+      if (!buildingOptions.length) {
+        select.innerHTML = '<option value="">Create a building first</option>';
+        return;
+      }
+
+      select.innerHTML = buildingOptions.map((building) => {
+        return `<option value="${building.id}">${escapeHtml(building.name)} (${escapeHtml(building.code)})</option>`;
+      }).join('');
+    }
+
+    function getBuildingRowValue(id, field) {
+      const el = document.querySelector(`[data-id="${id}"][data-field="${field}"]`);
+      return el ? el.value : '';
+    }
+
+    async function createBuilding() {
+      const code = document.getElementById('buildingCode').value.trim();
+      const name = document.getElementById('buildingName').value.trim();
+      const location = document.getElementById('buildingLocation').value.trim();
+      const description = document.getElementById('buildingDescription').value.trim();
+      const status = document.getElementById('buildingStatus').value;
+
+      const response = await fetch('/api/admin/buildings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ code, name, location, description, status })
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        alert(payload.message || 'Could not create building.');
+        return;
+      }
+
+      document.getElementById('buildingCode').value = '';
+      document.getElementById('buildingName').value = '';
+      document.getElementById('buildingLocation').value = '';
+      document.getElementById('buildingDescription').value = '';
+      document.getElementById('buildingStatus').value = 'active';
+      await loadBuildings();
+    }
+
+    async function saveBuilding(id) {
+      const code = getBuildingRowValue(id, 'code').trim();
+      const name = getBuildingRowValue(id, 'name').trim();
+      const status = getBuildingRowValue(id, 'status');
+      const location = getBuildingRowValue(id, 'location').trim();
+      const description = getBuildingRowValue(id, 'description').trim();
+
+      const response = await fetch(`/api/admin/buildings/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ code, name, status, location, description })
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        alert(payload.message || 'Could not update building.');
+        return;
+      }
+      await loadBuildings();
+    }
+
+    async function deleteBuilding(id) {
+      if (!confirm('Delete this building? This may also delete linked resources.')) return;
+      const response = await fetch(`/api/admin/buildings/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        alert(payload.message || 'Could not delete building.');
+        return;
+      }
+      await loadBuildings();
+      await loadResources();
+    }
+
+    async function loadResources() {
+      const response = await fetch('/api/resources', { credentials: 'include' });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.message || 'Could not load resources.');
+      }
+
+      const rows = payload.data || [];
+      const tbody = document.getElementById('resourcesTable');
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="8">No resources found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = rows.map((resource) => {
+        const building = buildingOptions.find((item) => item.code === resource.building_code) || null;
+        return `
+          <tr>
+            <td>${resource.id}</td>
+            <td>
+              <input value="${escapeHtml(resource.name || '')}" data-resource-field="name" data-resource-id="${resource.id}" />
+              <textarea data-resource-field="description" data-resource-id="${resource.id}" style="margin-top:8px;">${escapeHtml(resource.description || '')}</textarea>
+            </td>
+            <td>
+              <input value="${escapeHtml(resource.type || '')}" data-resource-field="type" data-resource-id="${resource.id}" />
+              <input value="${escapeHtml(resource.floor_number || '')}" data-resource-field="floor_number" data-resource-id="${resource.id}" placeholder="Floor / room" style="margin-top:8px;" />
+            </td>
+            <td>
+              <select data-resource-field="building_id" data-resource-id="${resource.id}">
+                ${buildingOptions.map((option) => `
+                  <option value="${option.id}" ${building && option.id === building.id ? 'selected' : ''}>${escapeHtml(option.name)} (${escapeHtml(option.code)})</option>
+                `).join('')}
+              </select>
+              <input value="${escapeHtml(resource.capacity ?? '')}" data-resource-field="capacity" data-resource-id="${resource.id}" type="number" min="0" placeholder="Capacity" style="margin-top:8px;" />
+            </td>
+            <td>
+              <select data-resource-field="is_open" data-resource-id="${resource.id}">
+                <option value="1" ${resource.is_open ? 'selected' : ''}>Open</option>
+                <option value="0" ${!resource.is_open ? 'selected' : ''}>Closed</option>
+              </select>
+            </td>
+            <td>
+              <input value="${escapeHtml(resource.timings || '')}" data-resource-field="timings" data-resource-id="${resource.id}" />
+              <textarea data-resource-field="equipment" data-resource-id="${resource.id}" style="margin-top:8px;">${escapeHtml(resource.equipment || '')}</textarea>
+            </td>
+            <td>
+              <input value="${escapeHtml(resource.contact_info || '')}" data-resource-field="contact_info" data-resource-id="${resource.id}" />
+            </td>
+            <td>
+              <button class="save" onclick="saveResource(${resource.id})">Save</button>
+              <button class="delete" onclick="deleteResource(${resource.id})">Delete</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function getResourceFieldValue(id, field) {
+      const el = document.querySelector(`[data-resource-id="${id}"][data-resource-field="${field}"]`);
+      return el ? el.value : '';
+    }
+
+    async function createResource() {
+      const payload = {
+        building_id: document.getElementById('resourceBuilding').value,
+        name: document.getElementById('resourceName').value.trim(),
+        type: document.getElementById('resourceType').value.trim(),
+        floor_number: document.getElementById('resourceFloor').value.trim(),
+        description: document.getElementById('resourceDescription').value.trim(),
+        is_open: document.getElementById('resourceOpen').value,
+        contact_info: document.getElementById('resourceContact').value.trim(),
+        timings: document.getElementById('resourceTimings').value.trim(),
+        capacity: document.getElementById('resourceCapacity').value.trim(),
+        equipment: document.getElementById('resourceEquipment').value.trim()
+      };
+
+      const response = await fetch('/api/resources', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+      const body = await response.json();
+      if (!response.ok || !body.success) {
+        alert(body.message || 'Could not create resource.');
+        return;
+      }
+
+      document.getElementById('resourceName').value = '';
+      document.getElementById('resourceType').value = '';
+      document.getElementById('resourceFloor').value = '';
+      document.getElementById('resourceDescription').value = '';
+      document.getElementById('resourceContact').value = '';
+      document.getElementById('resourceTimings').value = '';
+      document.getElementById('resourceCapacity').value = '';
+      document.getElementById('resourceEquipment').value = '';
+      document.getElementById('resourceOpen').value = '1';
+      await loadResources();
+      await loadStats();
+    }
+
+    async function saveResource(id) {
+      const payload = {
+        building_id: getResourceFieldValue(id, 'building_id'),
+        name: getResourceFieldValue(id, 'name').trim(),
+        type: getResourceFieldValue(id, 'type').trim(),
+        floor_number: getResourceFieldValue(id, 'floor_number').trim(),
+        description: getResourceFieldValue(id, 'description').trim(),
+        is_open: getResourceFieldValue(id, 'is_open'),
+        contact_info: getResourceFieldValue(id, 'contact_info').trim(),
+        timings: getResourceFieldValue(id, 'timings').trim(),
+        capacity: getResourceFieldValue(id, 'capacity').trim(),
+        equipment: getResourceFieldValue(id, 'equipment').trim()
+      };
+
+      const response = await fetch(`/api/resources/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+      const body = await response.json();
+      if (!response.ok || !body.success) {
+        alert(body.message || 'Could not update resource.');
+        return;
+      }
+
+      await loadResources();
+    }
+
+    async function deleteResource(id) {
+      if (!confirm('Delete this resource?')) return;
+
+      const response = await fetch(`/api/resources/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const body = await response.json();
+      if (!response.ok || !body.success) {
+        alert(body.message || 'Could not delete resource.');
+        return;
+      }
+
+      await loadResources();
+      await loadStats();
+    }
+
+    (async function init() {
+      const ok = await requireAdmin();
+      if (!ok) return;
+      await Promise.all([loadStats(), loadUsers(), loadBuildings()]);
+      await loadResources();
+    })();
+  </script>
+</body>
+</html>
