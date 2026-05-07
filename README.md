@@ -1,147 +1,227 @@
-🚀 Campus Intelligence System
+# 🚀 Campus Intelligence System
 
-A data-driven platform for unified campus communication and resource visibility.
+### A data-driven platform for unified campus communication and resource visibility
 
-📌 Overview
+---
+
+## 📌 Overview
 
 In most campuses, information is scattered across emails, portals, and informal channels like WhatsApp.
 
 Because of this:
-
-Students miss important announcements
-Finding classrooms or resources becomes difficult
-There is no single reliable source of truth
+- Students miss important announcements  
+- Finding classrooms or resources becomes difficult  
+- There is no single reliable source of truth  
 
 This system solves that by collecting data from multiple sources and presenting it in a structured and meaningful way.
 
-🧠 Core Idea
+---
+
+## 🧠 Core Idea
 
 Instead of storing static data, the system works like this:
 
-Inputs → Processing → Outputs
+**Inputs → Processing → Outputs**
 
-Inputs: emails, notices, user activity
-Processing: filtering, validation, classification
-Outputs: structured notices, discussions, resource availability
+- Inputs: emails, notices, user activity  
+- Processing: filtering, validation, classification  
+- Outputs: structured notices, discussions, resource availability  
 
-The system automatically derives information instead of relying on manual updates.
+---
 
-🎯 Use Cases
-Students check available classrooms in real time
-Important notices are automatically fetched from emails
-Students ask questions and get structured answers
-Admin manages all announcements in one place
-🔍 Features
-Centralized notice system (admin + email integration)
-Dynamic classroom/resource availability
-Structured community discussions with replies and resolution
-Role-based authentication and session management
-Automated email fetching using IMAP
-⚙️ Tech Stack
+## 🎯 Use Cases
 
-Backend: Node.js, Express.js
-Database: MySQL
-Frontend: HTML, CSS, JavaScript
-Mobile (exploration): Flutter
+- Check available classrooms dynamically  
+- Automatically view important notices from emails  
+- Ask and resolve queries through structured discussions  
+- Manage announcements centrally as an admin  
 
-🛠️ Complete Setup Guide (Step-by-Step)
-Step 1 — Install Requirements
+---
+
+## 🔍 Features
+
+- Centralized notice system (admin + email integration)  
+- Dynamic classroom/resource availability  
+- Structured community discussions with replies and resolution  
+- Role-based authentication and session management  
+- Automated email fetching using IMAP  
+
+---
+
+## ⚙️ Tech Stack
+
+**Backend:** Node.js, Express.js  
+**Database:** MySQL  
+**Frontend:** HTML, CSS, JavaScript  
+**Mobile (exploration):** Flutter  
+
+---
+
+## 🛠️ Setup Guide
+
+### 1️⃣ Install Requirements
 
 Make sure you have:
+- Node.js  
+- MySQL  
+- MySQL Workbench (optional but recommended)  
 
-Node.js installed
-MySQL installed
-MySQL Workbench (optional but recommended)
-Step 2 — Clone the Project
+---
+
+### 2️⃣ Clone the Project
+
+```bash
 git clone <your-repo-link>
 cd Campus-Platform
-Step 3 — Install Dependencies
+```
+
+---
+
+### 3️⃣ Install Dependencies
+
+```bash
 npm install
-Step 4 — Setup MySQL (Database + Connection)
-Open MySQL Workbench
-Click "+" (New Connection)
-Fill the following:
-Connection Name: anything (e.g. Campus Intelligence)
-Hostname: 127.0.0.1
-Port: 3306
-Username: root
-Password: your MySQL password
-Click Test Connection → then OK
-Step 5 — Create Database
+```
 
-Open a new SQL tab and run:
+---
 
+### 4️⃣ Setup MySQL Connection
+
+Open MySQL Workbench → Click **"+" (New Connection)** and fill:
+
+- Connection Name: anything (e.g. Campus Intelligence)  
+- Hostname: `127.0.0.1`  
+- Port: `3306`  
+- Username: `root`  
+- Password: *(your MySQL password)*  
+
+Click **Test Connection** → then **OK**
+
+---
+
+### 5️⃣ Create Database
+
+Open SQL tab and run:
+
+```sql
 CREATE DATABASE myappdb;
-Step 6 — Configure Environment Variables
+```
 
-Create a file named .env in the project root:
+---
 
+### 6️⃣ Configure Environment Variables
+
+Create a file named `.env` in the project root:
+
+```env
 DB_HOST=127.0.0.1
 DB_USER=root
 DB_PASS=Root@1234
 DB_NAME=myappdb
+```
 
-⚠️ Replace Root@1234 with your actual MySQL password
+> Replace `Root@1234` with your actual MySQL password
 
-Step 7 — Run Database Migration
+---
 
-This creates all required tables automatically:
+### 7️⃣ Run Database Migration
 
+```bash
 node database/migrate.js
+```
 
-After this, you should see tables appear in MySQL Workbench.
+This will create all required tables.
 
-Step 8 — Start the Server
+---
+
+### 8️⃣ Start the Server
+
+```bash
 node server.js
-Step 9 — Open the Application
+```
+
+---
+
+### 9️⃣ Open the Application
 
 Open your browser and go to:
 
+```
 http://localhost:3000
-🔑 Default Admin Login
+```
 
-Use this to log in:
+---
 
+## 🔑 Default Admin Credentials
+
+```
 Email: admin@campus.com
-
 Password: admin123
+```
 
-⚠️ Change this after first login
+> Change credentials after first login (recommended)
 
-🏗️ Architecture (Simple Explanation)
+---
 
-The system has 3 main parts:
+## 🏗️ Architecture
 
-Data Sources
-(users, admin inputs, emails)
-Processing Engine
-(filters and processes data)
-Output Layer
-(what users see: notices, resources, discussions)
-🔄 Core Logic
-Resource availability is based on active notices
-Notices are filtered by priority and relevance
-Community posts allow replies and accepted answers
-Some posts expire automatically to avoid clutter
-📱 Mobile Extension
+```
+Data Sources → Processing Engine → Output Layer
+```
 
-A Flutter-based mobile interface fetches notices from backend APIs and displays them in a simple format.
+- Data Sources: users, admins, emails  
+- Processing Engine: filtering, validation, classification  
+- Output Layer: notices, resources, community  
 
-📉 Limitations
-No real-time updates
-In-memory session storage
-No pagination for large data
-🚀 Future Improvements
-Real-time updates using WebSockets
-Redis-based session storage
-Advanced search and filtering
-AI-based classification
-OAuth authentication
-💡 Key Insight
+---
 
-Users do not reliably maintain system state.
-The system must derive state from data.
+## 🔄 Core Logic
 
-👨‍💻 Author
+- Resource availability is derived from active notices  
+- Notices are filtered by priority and relevance  
+- Community posts support replies and accepted answers  
+- Update-type posts expire automatically  
 
-Aravind M
+---
+
+## 📱 Mobile Extension
+
+A Flutter-based interface fetches notices from backend APIs and displays them in a mobile-friendly format.
+
+---
+
+## 📉 Limitations
+
+- No real-time updates  
+- In-memory session storage  
+- No pagination for large datasets  
+
+---
+
+## 🚀 Future Improvements
+
+- WebSockets for real-time updates  
+- Redis-based session management  
+- Advanced search and filtering  
+- AI-based classification  
+- OAuth authentication  
+
+---
+
+## 💡 Key Insight
+
+> Systems should derive state from data instead of relying on users to maintain it.
+
+---
+
+## 👨‍💻 Author
+
+**Aravind M**
+
+---
+
+## ⚠️ Important Notes
+
+- Do NOT upload `.env` to GitHub  
+- Add `.env` to `.gitignore`  
+- Ensure MySQL server is running before starting  
