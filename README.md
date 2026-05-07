@@ -71,7 +71,7 @@ Make sure you have:
 ### 2️⃣ Clone the Project
 
 ```bash
-git clone <your-repo-link>
+git clone http://github.com/Aravind0066/Campus-Platform
 cd Campus-Platform
 ```
 
